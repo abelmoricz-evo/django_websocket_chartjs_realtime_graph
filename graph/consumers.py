@@ -12,3 +12,7 @@ class GraphConsumer(AsyncWebsocketConsumer):
         for i in range(1000):
             await self.send(json.dumps({'value': randint(-20, 20)}))
             await sleep(1)
+
+
+
+            
