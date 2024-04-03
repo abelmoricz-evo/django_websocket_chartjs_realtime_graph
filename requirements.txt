@@ -44,6 +44,12 @@ django==4.1.4
     # via
     #   -r requirements.in
     #   channels
+
+
+gunicorn==20.1.0
+
+
+
 hiredis==2.1.0
     # via aioredis
 hyperlink==21.0.0
