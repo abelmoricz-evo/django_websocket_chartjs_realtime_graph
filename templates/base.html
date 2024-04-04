@@ -25,13 +25,13 @@
 
     <div class="grid pd-large">
         <div class="cell">
-            <canvas id="myChart" width="400" height="200"></canvas>
-            <canvas id="pid_chart" width="400" height="200"></canvas>
+            <canvas id="myChart" width="400" height="100"></canvas>
+            <canvas id="pid_chart" width="400" height="100"></canvas>
 
         </div>
 
         <div class="cell">
-            <canvas class="cell" id="do_and_feed_chart" width="400" height="200"></canvas>
+            <canvas class="cell" id="do_and_feed_chart" width="400" height="100"></canvas>
         </div>
     </div>
 
@@ -69,11 +69,19 @@
             }, options: { scales: {
                     y: { max: -1, min: 1, display: true, position: 'left', },
                     y1: { display: true, position: 'right', max: 7, min: 0 }
-                },horizontalLine: [{
-      y: 0,
-      style: "rgba(255, 0, 0, .4)",
-      text: "max"
-    },]
+                },"horizontalLine": [{
+      "y": 0.2,
+      "style": "#ff0000",
+      "text": "upper-limit"
+    }, {
+      "y": 0,
+      "style": "#00ff00",
+      "text": "avg"
+    }, {
+      "y": -0.2,
+      "style": "#0000ff",
+      "text": "lower-limit"
+    }],
         }};
         var pid_chart = new Chart(pid_canvas, pid_data);
 
