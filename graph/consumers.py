@@ -1,5 +1,6 @@
 import json
 import math
+import random
 from random import randint
 from asyncio import sleep
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -21,15 +22,16 @@ class GraphConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
 
-        total_base_added = 0
+        
         for i in range(0,100):
-            bacteria_ph = self.exp(i)
-            total_base_added = total_base_added + self.exp(i)
+            ph_setpoint = 6
+            ph_actual = 6 + random.uniform(-0.3,0.3)
+            ph_deviation = ph_setpoint - ph_actual
             await self.send(json.dumps({ 
-                'value': round(bacteria_ph,6), 
-                'index': round(i,6), 
-                'sum': round(total_base_added,6),
-                'pump_setpoint': 2,
+                'hour': i,
+                'ph_setpoint': ph_setpoint, 
+                'ph_actual': ph_actual, 
+                'ph_deviation': ph_deviation,
             }))
             await sleep(SECONDS_PAUSE)
 

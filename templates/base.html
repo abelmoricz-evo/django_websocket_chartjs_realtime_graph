@@ -1,132 +1,158 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <!-- CSS only 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
     -->
-          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <link
-  rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"
->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
     <title>Real Time Graph App</title>
 </head>
+
 <body class="is-family-monospace">
 
 
-<div class="title is-size-1 has-text-centered">fermentation tank a</div>
-<div class="title is-subtitle has-text-centered">100 seconds for visual demo</div>
+    <div class="title is-size-1 has-text-centered">fermentation tank a</div>
+    <div class="title is-subtitle has-text-centered">100 seconds for visual demo</div>
 
 
 
 
-<div class="grid pd-large">
-    <div class="cell">
-        <canvas id="myChart" width="400" height="200"></canvas>
-        <div id="ph_display"></div>
-        <div id="total_l_display"></div>
+    <div class="grid pd-large">
+        <div class="cell">
+            <canvas id="myChart" width="400" height="200"></canvas>
+            <canvas id="pid_chart" width="400" height="200"></canvas>
 
-
-        <div class="card">
-            <div class="card-header card-header-title" id="go-first">base (NaOH) and acid non-overlapping addition</div>
-            <div class="card-content">
-                <ol>
-                    <li>starting pH is 6</li>
-                    <li>200L of 10 mol NaOH will be added over 100 hours</li>
-                    <li>for the first ____ hours no base will be added</li>
-                    <li>STEFAN NEWMAN: first base will be added, then pump tube switched to acid which is switched on in a second phase</li>
-                </ol>
-            
-            </div>
         </div>
-        
+
+        <div class="cell">
+            <canvas class="cell" id="do_and_feed_chart" width="400" height="200"></canvas>
+        </div>
     </div>
-    <div class="cell">
-        <canvas class="cell" id="do_and_feed_chart" width="400" height="200"></canvas>
-        
-    </div>
-</div>
 
 
 
-<script>
+    <script>
 
 
-const ctx = document.getElementById('myChart');
-let graphData = { type: 'line',
-    data: { labels: [],
-            datasets: [{
-                label: 'liters of base added per hour', data: [], fill: true,
-                backgroundColor: ['rgba(73, 198, 230, 0.5)',], borderWidth: 2
-            }]
-    }, options:{scales: {y: {max: 70, min: 0, display: true,position: 'left',},
-                        y1: {display: true,position: 'right',max: 7, min:0}}}
-};
-var myChart = new Chart(ctx, graphData);
+        const ctx = document.getElementById('myChart');
+        let graphData = { type: 'line', data: { labels: [],
+                datasets: [{
+                    label: 'ph_setpoint', data: [], fill: false,
+                    borderWidth: 2
+                },{
+                    label: 'ph_actual', data: [], fill: true,
+                    backgroundColor: ['rgba(73, 198, 230, 0.5)',], borderWidth: 2
+                }]
+            }, options: { scales: {
+                    y: { max: 7, min: 5, display: true, position: 'left', },
+                    y1: { display: true, position: 'right', max: 7, min: 0 }
+                }
+            }
+        };
+        var myChart = new Chart(ctx, graphData);
+
+        const pid_canvas = document.getElementById('pid_chart');
+        let pid_data = { type: 'line', data: { labels: [],
+                datasets: [{
+                    label: 'ph_setpoint', data: [], fill: false,
+                    borderWidth: 2, yAxisID: 'y',
+                },{
+                    label: 'ph_actual', data: [], fill: true,
+                    backgroundColor: ['rgba(73, 198, 230, 0.5)',], borderWidth: 2
+                }]
+            }, options: { scales: {
+                    y: { max: -1, min: 1, display: true, position: 'left', },
+                    y1: { display: true, position: 'right', max: 7, min: 0 }
+                },horizontalLine: [{
+      y: 0,
+      style: "rgba(255, 0, 0, .4)",
+      text: "max"
+    },]
+        }};
+        var pid_chart = new Chart(pid_canvas, pid_data);
 
 
-var socket = new WebSocket('ws://localhost:8000/ws/graph/')
-socket.onmessage = function (e) {
-    var djangoData = JSON.parse(e.data);
+        var socket = new WebSocket('ws://localhost:8000/ws/graph/')
+        socket.onmessage = function (e) {
+            var djangoData = JSON.parse(e.data);
+            
+            var newGraphData = graphData.data.datasets[0].data;
+            newGraphData.push(djangoData.ph_setpoint);
+            graphData.data.datasets[0].data = newGraphData;
 
-    var newGraphData = graphData.data.datasets[0].data;    
-    newGraphData.push(djangoData.value);
-    graphData.data.datasets[0].data = newGraphData;
-
-    graphData.data.labels = Array.from(Array(100).keys());
-
-    myChart.update();
-
-    document.getElementById("ph_display").innerHTML = "liters / hour: " + djangoData.sum;
-
-    document.getElementById("total_l_display").innerHTML = "cummulative liters: " + djangoData.sum;
-}
+            var ph_actual_data = graphData.data.datasets[1].data;
+            ph_actual_data.push(djangoData.ph_actual);
+            graphData.data.datasets[1].data = ph_actual_data;
+            
+            graphData.data.labels = Array.from(Array(100).keys());
+            myChart.update();
 
 
+            var ph_deviation_data = pid_data.data.datasets[0].data;
+            ph_deviation_data.push(djangoData.ph_deviation);
+            pid_data.data.datasets[0].data = ph_deviation_data;
 
+            
+            pid_data.data.labels = Array.from(Array(100).keys());
+            
+            pid_chart.update();
 
-
-
-const do_and_feed_graph = document.getElementById('do_and_feed_chart');
-let do_and_feed_data = { type: 'line',
-    data: { labels: [],
-            datasets: [{
-                label: 'DO', data: [], fill: true,yAxisID: 'y',
-                backgroundColor: ['rgba(73, 198, 230, 0.5)',], borderWidth: 2
-            },
-            {
-                label: 'feed', data: [], fill: true,yAxisID: 'y1',
-                backgroundColor: ['rgba(73, 98, 200, 0.5)',], borderWidth: 2
-            }]
-    }, options:{scales: {y: {max: 70, min: 0, display: true,position: 'left',},
-                        y1: {display: true,position: 'right',max: 7, min:0}}}
-};
-var myChart_do = new Chart(do_and_feed_graph, do_and_feed_data);
-
-var socket_do = new WebSocket('ws://localhost:8000/ws/do_and_feed/')
-socket_do.onmessage = function (e) {
-    var djangoData = JSON.parse(e.data);
-
-    var newGraphData_do = do_and_feed_data.data.datasets[0].data;    
-    newGraphData_do.push(djangoData.value);
-    do_and_feed_data.data.datasets[0].data = newGraphData_do;
-
-    var newGraphData_feed = do_and_feed_data.data.datasets[1].data;    
-    newGraphData_feed.push(djangoData.feed_value);
-    do_and_feed_data.data.datasets[1].data = newGraphData_feed;
-
-    do_and_feed_data.data.labels = Array.from(Array(100).keys());
-
-    myChart_do.update();
-}
+        }
 
 
 
 
-</script>
+
+
+        const do_and_feed_graph = document.getElementById('do_and_feed_chart');
+        let do_and_feed_data = {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'DO', data: [], fill: true, yAxisID: 'y',
+                    backgroundColor: ['rgba(73, 198, 230, 0.5)',], borderWidth: 2
+                },
+                {
+                    label: 'feed', data: [], fill: true, yAxisID: 'y1',
+                    backgroundColor: ['rgba(73, 98, 200, 0.5)',], borderWidth: 2
+                }]
+            }, options: {
+                scales: {
+                    y: { max: 70, min: 0, display: true, position: 'left', },
+                    y1: { display: true, position: 'right', max: 7, min: 0 }
+                }
+            }
+        };
+        var myChart_do = new Chart(do_and_feed_graph, do_and_feed_data);
+
+        var socket_do = new WebSocket('ws://localhost:8000/ws/do_and_feed/')
+        socket_do.onmessage = function (e) {
+            var djangoData = JSON.parse(e.data);
+
+            var newGraphData_do = do_and_feed_data.data.datasets[0].data;
+            newGraphData_do.push(djangoData.value);
+            do_and_feed_data.data.datasets[0].data = newGraphData_do;
+
+            var newGraphData_feed = do_and_feed_data.data.datasets[1].data;
+            newGraphData_feed.push(djangoData.feed_value);
+            do_and_feed_data.data.datasets[1].data = newGraphData_feed;
+
+            do_and_feed_data.data.labels = Array.from(Array(100).keys());
+
+            myChart_do.update();
+        }
+
+
+
+
+    </script>
 </body>
+
 </html>
