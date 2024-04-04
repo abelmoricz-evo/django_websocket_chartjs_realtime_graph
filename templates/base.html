@@ -18,20 +18,20 @@
 
 
     <div class="title is-size-1 has-text-centered">fermentation tank a</div>
-    <div class="title is-subtitle has-text-centered">100 seconds for visual demo</div>
+    <div class="title is-subtitle has-text-centered">0 - acid / 14 - base</div>
 
 
 
 
     <div class="grid pd-large">
         <div class="cell">
-            <canvas id="myChart" width="400" height="100"></canvas>
-            <canvas id="pid_chart" width="400" height="100"></canvas>
+            <canvas id="myChart" width="400" height="400"></canvas>
+            <canvas id="pid_chart" width="400" height="400"></canvas>
 
         </div>
 
         <div class="cell">
-            <canvas class="cell" id="do_and_feed_chart" width="400" height="100"></canvas>
+            <canvas class="cell" id="do_and_feed_chart" width="400" height="400"></canvas>
         </div>
     </div>
 
@@ -45,50 +45,42 @@
                 datasets: [{
                     label: 'ph_setpoint', data: [], fill: false,
                     borderWidth: 2
-                },{
+                },
+                {
                     label: 'ph_actual', data: [], fill: true,
                     backgroundColor: ['rgba(73, 198, 230, 0.5)',], borderWidth: 2
-                }]
+                }
+            ]
             }, options: { scales: {
-                    y: { max: 7, min: 5, display: true, position: 'left', },
-                    y1: { display: true, position: 'right', max: 7, min: 0 }
+                    y:  { max: 320, min: 290, display: true, position: 'left', },
+                    y1: { max: 320, min: 290, display: true, position: 'right',}
                 }
             }
         };
         var myChart = new Chart(ctx, graphData);
 
+    /*
         const pid_canvas = document.getElementById('pid_chart');
         let pid_data = { type: 'line', data: { labels: [],
                 datasets: [{
-                    label: 'ph_setpoint', data: [], fill: false,
+                    label: 'ph_deviation', data: [], fill: false,
                     borderWidth: 2, yAxisID: 'y',
                 },{
-                    label: 'ph_actual', data: [], fill: true,
+                    label: 'base_addition', data: [], fill: true,
                     backgroundColor: ['rgba(73, 198, 230, 0.5)',], borderWidth: 2
                 }]
             }, options: { scales: {
-                    y: { max: -1, min: 1, display: true, position: 'left', },
-                    y1: { display: true, position: 'right', max: 7, min: 0 }
-                },"horizontalLine": [{
-      "y": 0.2,
-      "style": "#ff0000",
-      "text": "upper-limit"
-    }, {
-      "y": 0,
-      "style": "#00ff00",
-      "text": "avg"
-    }, {
-      "y": -0.2,
-      "style": "#0000ff",
-      "text": "lower-limit"
-    }],
+                    y: { max: 400, min: 0, display: true, position: 'left', },
+                    y1: { display: true, position: 'right', max: 400, min: 0 }
+                }
         }};
         var pid_chart = new Chart(pid_canvas, pid_data);
-
+*/
 
         var socket = new WebSocket('ws://localhost:8000/ws/graph/')
         socket.onmessage = function (e) {
             var djangoData = JSON.parse(e.data);
+            console.log(djangoData)
             
             var newGraphData = graphData.data.datasets[0].data;
             newGraphData.push(djangoData.ph_setpoint);
@@ -99,17 +91,25 @@
             graphData.data.datasets[1].data = ph_actual_data;
             
             graphData.data.labels = Array.from(Array(100).keys());
+            //var newLabels = graphData.data.labels;
+            //newLabels.push(djangoData.time);
+            //graphData.data.labels = newLabels;
+
             myChart.update();
 
 
-            var ph_deviation_data = pid_data.data.datasets[0].data;
-            ph_deviation_data.push(djangoData.ph_deviation);
-            pid_data.data.datasets[0].data = ph_deviation_data;
+//            var ph_deviation_data = pid_data.data.datasets[0].data;
+  //          ph_deviation_data.push(djangoData.ph_deviation);
+    //        pid_data.data.datasets[0].data = ph_deviation_data;
+//
+  //          var base_addition_data = pid_data.data.datasets[1].data;
+    //        base_addition_data.push(djangoData.base_addition);
+      //      pid_data.data.datasets[1].data = base_addition_data;
 
             
-            pid_data.data.labels = Array.from(Array(100).keys());
+        //    pid_data.data.labels = Array.from(Array(100).keys());
             
-            pid_chart.update();
+            //pid_chart.update();
 
         }
 
@@ -117,7 +117,7 @@
 
 
 
-
+/*
         const do_and_feed_graph = document.getElementById('do_and_feed_chart');
         let do_and_feed_data = {
             type: 'line',
@@ -157,7 +157,7 @@
             myChart_do.update();
         }
 
-
+*/
 
 
     </script>
