@@ -5,34 +5,31 @@ from asyncio import sleep
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 
-MUE = 0.155
-SECONDS_PAUSE = 0.1
+
+SECONDS_PAUSE = 0.2
 
 
 class GraphConsumer(AsyncWebsocketConsumer):
     global SECONDS_PAUSE
-
-    def projected_OD600(self, hours):
-        global MUE
-
-        return 0
+    XO = 4.08E-31
 
     def exp(self, x):
-        return math.exp(0.0952*x - 10)
+        return self.XO * math.exp(0.75 * x)
 
     async def connect(self):
         await self.accept()
 
-        for i in range(0,108):
+        total_base_added = 0
+        for i in range(0,100):
             bacteria_ph = self.exp(i)
-            await self.send(json.dumps({
-                'value': bacteria_ph, 
-                'index': i,
-
+            total_base_added = total_base_added + self.exp(i)
+            await self.send(json.dumps({ 
+                'value': round(bacteria_ph,6), 
+                'index': round(i,6), 
+                'sum': round(total_base_added,6),
+                'pump_setpoint': 2,
             }))
             await sleep(SECONDS_PAUSE)
-
-
 
 
 
@@ -40,7 +37,7 @@ class do_and_feed_consumer(AsyncWebsocketConsumer):
     global SECONDS_PAUSE
 
     def exp(self, x):
-        global MUE
+        MUE = 0.155
         return 0.9 * math.exp(x * MUE)
     
     async def connect(self):
