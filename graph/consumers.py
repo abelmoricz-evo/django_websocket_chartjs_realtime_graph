@@ -6,12 +6,14 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 
 
-SECONDS_PAUSE = 0.2
+SECONDS_PAUSE = 0.5
+
 
 
 class GraphConsumer(AsyncWebsocketConsumer):
     global SECONDS_PAUSE
     XO = 4.08E-31
+    XO = 0.001
 
     def exp(self, x):
         return self.XO * math.exp(0.75 * x)
