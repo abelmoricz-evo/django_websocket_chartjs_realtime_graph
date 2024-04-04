@@ -18,15 +18,18 @@ class GraphConsumer(AsyncWebsocketConsumer):
         return 0
 
     def exp(self, x):
-        return math.exp(0.0952*x - 10)
+        return math.exp(0.12*x - 10)
 
     async def connect(self):
         await self.accept()
 
+        total_base_added = 0
         for i in range(0,108):
             bacteria_ph = self.exp(i)
+            total_base_added = total_base_added + self.exp(i)
             await self.send(json.dumps({
                 'value': bacteria_ph, 
+                'sum': round(total_base_added,6),
                 'index': i,
 
             }))

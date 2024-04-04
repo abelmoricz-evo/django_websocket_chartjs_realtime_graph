@@ -19,6 +19,7 @@
 
 
 <div class="title is-size-1 has-text-centered">fermentation tank a</div>
+<div class="title is-subtitle has-text-centered">100 seconds for visual demo</div>
 
 
 
@@ -26,6 +27,10 @@
 <div class="grid pd-large">
     <div class="cell">
         <canvas id="myChart" width="400" height="200"></canvas>
+        <div id="ph_display"></div>
+        <div id="total_l_display"></div>
+
+
         <div class="card">
             <div class="card-header card-header-title" id="go-first">base (NaOH) and acid non-overlapping addition</div>
             <div class="card-content">
@@ -75,6 +80,10 @@ socket.onmessage = function (e) {
     graphData.data.labels = Array.from(Array(100).keys());
 
     myChart.update();
+
+    document.getElementById("ph_display").innerHTML = "liters / hour: " + djangoData.sum;
+
+    document.getElementById("total_l_display").innerHTML = "cummulative liters: " + djangoData.sum;
 }
 
 
