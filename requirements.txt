@@ -54,6 +54,7 @@ django==4.1.4
 gunicorn==20.1.0
 uvicorn
 matplotlib
+scipy
 
 hiredis==2.1.0
     # via aioredis
