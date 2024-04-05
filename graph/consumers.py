@@ -14,7 +14,6 @@ import sys, asyncio
 if sys.platform == "win32" and (3, 8, 0) <= sys.version_info < (3, 9, 0):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-SECONDS_PAUSE = 0.01
 
 time = 0
 integral = 0
@@ -47,13 +46,9 @@ def system(t, temp, Tq):
     dTdt = 1/(tau*(1+epsilon)) * (Tf-temp) + Q/(1+epsilon)*(Tq-temp)
     return dTdt
 
-def run():
+def run(P=2, D=0, I=0.1, sim=True):
     global time, integral, time_prev, e_prev# Value of offset - when the error is equal zero
     global setpoint
-
-    P = 2
-    I = 0.1
-    D = 0
 
     # number of steps
     n = 100
@@ -70,15 +65,17 @@ def run():
         time = i * deltat
         tspan = np.linspace(time_prev, time, 10)
         Tq = PID(P, I, D, setpoint, y_sol[-1]),
-        yi = odeint(system,y_sol[-1], tspan, args = Tq, tfirst=True)
+        print(Tq)
+        if sim:
+            yi = odeint(system,y_sol[-1], tspan, args = Tq, tfirst=True)
         t_sol.append(time)
         y_sol.append(yi[-1][0])
         q_sol.append(Tq[0])
+        #print(q_sol)
         time_prev = time
-    return t_sol, y_sol
+    return t_sol, y_sol, q_sol
 
 class GraphConsumer(AsyncWebsocketConsumer):
-    global SECONDS_PAUSE
     global setpoint
 
     async def connect(self):
@@ -90,9 +87,10 @@ class GraphConsumer(AsyncWebsocketConsumer):
                     'hour': t,
                     'ph_actual': y, 
                     'ph_setpoint': setpoint, 
-                    #'ph_deviation': ph_deviation,
+                    
                     #'base_addition': base_addition,
             }))
+            #await time.sleep(0.1)
 
 
 
@@ -109,12 +107,16 @@ class pid_controller(AsyncWebsocketConsumer):
         print(self.room_group_name)
         await self.accept()
         
-        for i in range(0,10):
+        t_sol, y_sol, q_sol = run(0.5, 0.1, 0.1)
         
-            await self.send(json.dumps({
-                'value': 1, 
-                'feed_value': 2,
-                'index': i,
+        for t, y, q in zip(t_sol, y_sol, q_sol):
+            await self.send(json.dumps({ 
+                    'hour': t,
+                    'ph_actual': y, 
+                    'ph_setpoint': setpoint, 
+                    'ph_changer': q,
+                    #'ph_deviation': ph_deviation,
+                    #'base_addition': base_addition,
             }))
             
             

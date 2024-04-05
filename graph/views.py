@@ -3,6 +3,7 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
 
+# gunicorn django_project.asgi --log-level=debug -k uvicorn.workers.UvicornWorker
 
 def event_triger():
     print("\nhello from event_trigger views.py")

@@ -86,14 +86,23 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+# "LOCATION": "redis://default:uWGQfGJvFkZthdOOAhCzSaFiapKnjTeE@roundhouse.proxy.rlwy.net:44817",
+#REDIS_URL = f"redis://{config('REDISUSER', default='default')}:{config('REDISPASSWORD', default='')}@{config('REDISHOST', default='redis')}:{config('REDISPORT', default=6379)}"
+# os.getenv()
 
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        
         'CONFIG': {
             'hosts': [('127.0.0.1', 6379)]
+            #'hosts': [('roundhouse.proxy.rlwy.net', 44817)]
         }
     }
+    #"default": {
+    #    "BACKEND": "django.core.cache.backends.redis.RedisCache",
+    #    "LOCATION": REDIS_URL,
+    #}
 }
 
 # Password validation

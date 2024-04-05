@@ -110,43 +110,51 @@
 
 
 
-        /*
-        const do_and_feed_graph = document.getElementById('do_and_feed_chart');
-        let do_and_feed_data = {
+        
+        const real_pid_chart = document.getElementById('pid_controller');
+        let pid_data = {
             type: 'line', data: {
                 labels: Array.from(Array(100).keys()), datasets: [{
-                    label: 'DO', data: [], fill: true, yAxisID: 'y',
+                    label: 'actual', data: [], fill: true, yAxisID: 'y',
                     backgroundColor: ['rgba(73, 198, 230, 0.5)',], borderWidth: 2
                 },
                 {
                     label: 'feed', data: [], fill: true, yAxisID: 'y1',
                     backgroundColor: ['rgba(73, 98, 200, 0.5)',], borderWidth: 2
+                },
+                {
+                    label: 'input', data: [], fill: true, yAxisID: 'y2',
+                    backgroundColor: ['rgba(130, 20, 120, 0.5)',], borderWidth: 2
                 }]
             }, options: {
                 scales: {
-                    y: { max: 70, min: 0, display: true, position: 'left', },
-                    y1: { display: true, position: 'right', max: 7, min: 0 }
+                    y: { max: 320, min: 290, display: true, position: 'left', },
+                    y1: { max: 320, min: 290, display: true, position: 'right', },
+                    y2: { max: 320, min: 290, display: true, position: 'right', },
+                    
                 }
             }
         };
-        var myChart_do = new Chart(do_and_feed_graph, do_and_feed_data);
-*/
+        var myChart_do = new Chart(real_pid_chart, pid_data);
+
         var socket_do = new WebSocket('ws://localhost:8000/ws/pid/')
         socket_do.onmessage = function (e) {
             var djangoData = JSON.parse(e.data);
-            //console.log(djangoData)
-            /*
-            var newGraphData_do = do_and_feed_data.data.datasets[0].data;
-            newGraphData_do.push(djangoData.value);
-            do_and_feed_data.data.datasets[0].data = newGraphData_do;
- 
-            var newGraphData_feed = do_and_feed_data.data.datasets[1].data;
-            newGraphData_feed.push(djangoData.feed_value);
-            do_and_feed_data.data.datasets[1].data = newGraphData_feed;
- 
-            do_and_feed_data.data.labels = Array.from(Array(100).keys());
-            */
-            //myChart_do.update();
+            console.log(djangoData)
+            
+            var newGraphData = pid_data.data.datasets[0].data;
+            newGraphData.push(djangoData.ph_setpoint);
+            pid_data.data.datasets[0].data = newGraphData;
+
+            var ph_actual_data = pid_data.data.datasets[1].data;
+            ph_actual_data.push(djangoData.ph_actual);
+            pid_data.data.datasets[1].data = ph_actual_data;
+            
+            var ph_input_data = pid_data.data.datasets[2].data;
+            ph_input_data.push(djangoData.ph_changer);
+            pid_data.data.datasets[2].data = ph_input_data;
+
+            myChart_do.update();
         }
 
         var socket_event = new WebSocket('ws://localhost:8000/ws/event_consumer/')
