@@ -4,7 +4,8 @@ import random
 from random import randint
 from asyncio import sleep
 from channels.generic.websocket import AsyncWebsocketConsumer
-
+from channels.generic.websocket import WebsocketConsumer
+from asgiref.sync import async_to_sync
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
@@ -13,12 +14,14 @@ import sys, asyncio
 if sys.platform == "win32" and (3, 8, 0) <= sys.version_info < (3, 9, 0):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-SECONDS_PAUSE = 0.5
+SECONDS_PAUSE = 0.01
 
 time = 0
 integral = 0
 time_prev = -1e-6
 e_prev = 0
+
+setpoint = 300
 
 def PID(Kp, Ki, Kd, setpoint, measurement):
     global time, integral, time_prev, e_prev# Value of offset - when the error is equal zero
@@ -46,7 +49,7 @@ def system(t, temp, Tq):
 
 def run():
     global time, integral, time_prev, e_prev# Value of offset - when the error is equal zero
-    
+    global setpoint
 
     P = 2
     I = 0.1
@@ -61,7 +64,7 @@ def run():
     t_sol = [time_prev]# Tq is chosen as a manipulated variable
     Tq = 320,
     q_sol = [Tq[0]]
-    setpoint = 305
+    #setpoint = 300
     integral = 0
     for i in range(1, n):
         time = i * deltat
@@ -76,57 +79,84 @@ def run():
 
 class GraphConsumer(AsyncWebsocketConsumer):
     global SECONDS_PAUSE
-    
-    
-    def exp(self, x):
-        MUE = 0.155
-        return 0.9 * math.exp(x * MUE)
+    global setpoint
 
     async def connect(self):
         await self.accept()
         
         t_sol, y_sol = run()
-
         for t, y in zip(t_sol, y_sol):
             await self.send(json.dumps({ 
                     'hour': t,
                     'ph_actual': y, 
-                    'ph_setpoint': 305, 
+                    'ph_setpoint': setpoint, 
                     #'ph_deviation': ph_deviation,
                     #'base_addition': base_addition,
             }))
-                
-            await sleep(SECONDS_PAUSE)
-        
 
-'''
 
-class do_and_feed_consumer(AsyncWebsocketConsumer):
-    global SECONDS_PAUSE
 
-    def exp(self, x):
-        MUE = 0.155
-        return 0.9 * math.exp(x * MUE)
+class pid_controller(AsyncWebsocketConsumer):
     
     async def connect(self):
-            await self.accept()
-            for i in range(0,100):
+        self.room_name = 'event'
+        self.room_group_name = self.room_name+"_sharif"
+        #async_to_sync(
+        self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name
+        )
+        print(self.room_group_name)
+        await self.accept()
+        
+        for i in range(0,10):
+        
+            await self.send(json.dumps({
+                'value': 1, 
+                'feed_value': 2,
+                'index': i,
+            }))
+            
+            
+class EventConsumer(WebsocketConsumer):
+    def connect(self, text_data=None):
+        # self.room_name = self.scope['url_route']['kwargs']['room_name']
+        # self.room_group_name = 'chat_%s' % self.room_name
+        self.room_name = 'event'
+        self.room_group_name = self.room_name+"_sharif"
+        async_to_sync(self.channel_layer.group_add)(
+            self.room_group_name,
+            self.channel_name
+        )
+        print(self.room_group_name)
+        self.accept()
+        
+        print("\n#######CONNECTED############")
 
-                if i < 29:
-                    bacteria_ph = self.exp(i)
-                    feed_value = 0
-                else:
-                    bacteria_ph = self.exp(28) * pow(0.9995, float(i-28))
-                    feed_value = 5
-                await self.send(json.dumps({
-                    'value': bacteria_ph, 
-                    'feed_value': feed_value,
-                    'index': i,
+    def disconnect(self, code):
+        async_to_sync(self.channel_layer.group_discard)(
+            self.room_group_name,
+            self.channel_name
+        )
+        print("\n############################################DISCONNECED CODE: ",code)
 
-                }))
-                
-                
-                await sleep(SECONDS_PAUSE)
+    def receive(self, text_data=None, bytes_data=None):
+        print("\n###############################################MESSAGE RECEIVED")
+        data = json.loads(text_data)
+        message = data['message']
+        async_to_sync(self.channel_layer.group_send)(
+            self.room_group_name,{
+                "type": 'send_message_to_frontend',
+                "message": message
+            }
+        )
+    def send_message_to_frontend(self,event):
+        print("\n##########################################33EVENT TRIGERED")
+        # Receive message from room group
+        message = event['message']
+        # Send message to WebSocket
+        self.send(text_data=json.dumps({
+            'message': message
+        }))
 
-'''
 

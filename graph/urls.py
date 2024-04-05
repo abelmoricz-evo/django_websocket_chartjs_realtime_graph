@@ -3,5 +3,5 @@ from . import views
 
 urlpatterns = [
     path('', views.index),
-    path('update_setpoint/', views.update_setpoint),
+    path('update_pid/', views.update_pid),
 ]
