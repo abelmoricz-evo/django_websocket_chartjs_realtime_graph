@@ -11,6 +11,10 @@ import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 import sys, asyncio
 
+import struct
+import minimalmodbus
+import serial
+
 if sys.platform == "win32" and (3, 8, 0) <= sys.version_info < (3, 9, 0):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
@@ -20,7 +24,39 @@ integral = 0
 time_prev = -1e-6
 e_prev = 0
 
-setpoint = 300
+setpoint = 30#300
+
+def calculate_float(low, high):
+    t = (low, high)
+    packed_string = struct.pack("HH", *t)
+    return struct.unpack("f", packed_string)[0]
+
+def get_instrument(port_name):  
+    #instrument.debug = True
+    instrument = minimalmodbus.Instrument(port_name, 1) 
+    instrument.serial.baudrate = 19200 
+    instrument.serial.bytesize = 8 
+    instrument.serial.parity = serial.PARITY_NONE 
+    instrument.serial.stopbits = 1 
+    instrument.serial.timeout = 1 
+    instrument.mode = minimalmodbus.MODE_RTU 
+    instrument.close_port_after_each_call = True 
+    return instrument
+
+def get_ph_data(instrument):
+    temp = instrument.read_registers(registeraddress=2409, functioncode=3, number_of_registers=10) 
+    temp = calculate_float(temp[2],temp[3]) 
+    ph = instrument.read_registers(registeraddress=2089, functioncode=3, number_of_registers=10) 
+    ph = calculate_float(ph[2],ph[3]) 
+    return temp, ph
+
+def get_ph_actual():
+    for port, desc, hwid in sorted(serial.tools.list_ports.comports()):
+        print(f"{port}: {desc} [{hwid}]")
+    i = get_instrument('COM6')
+    temp, ph = get_ph_data(i)
+    return ph
+
 
 def PID(Kp, Ki, Kd, setpoint, measurement):
     global time, integral, time_prev, e_prev# Value of offset - when the error is equal zero
@@ -57,21 +93,26 @@ def run(P=2, D=0, I=0.1, sim=True):
     deltat = 1
     y_sol = [y0]
     t_sol = [time_prev]# Tq is chosen as a manipulated variable
-    Tq = 320,
+    Tq = 10,#320,
     q_sol = [Tq[0]]
     #setpoint = 300
     integral = 0
     for i in range(1, n):
         time = i * deltat
         tspan = np.linspace(time_prev, time, 10)
-        Tq = PID(P, I, D, setpoint, y_sol[-1]),
-        print(Tq)
-        if sim:
+        
+        if sim: 
+            # calculates control value
+            Tq = PID(P, I, D, setpoint, y_sol[-1]),
+            #print(f"control value: {Tq}")
+            # actual value
             yi = odeint(system,y_sol[-1], tspan, args = Tq, tfirst=True)
+            #real_ph = get_ph_actual()
+            #print(f"real ph: {real_ph}")
+            
         t_sol.append(time)
         y_sol.append(yi[-1][0])
         q_sol.append(Tq[0])
-        #print(q_sol)
         time_prev = time
     return t_sol, y_sol, q_sol
 
@@ -81,14 +122,12 @@ class GraphConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
         
-        t_sol, y_sol = run()
+        t_sol, y_sol, q_sol = run()
         for t, y in zip(t_sol, y_sol):
             await self.send(json.dumps({ 
                     'hour': t,
                     'ph_actual': y, 
                     'ph_setpoint': setpoint, 
-                    
-                    #'base_addition': base_addition,
             }))
             #await time.sleep(0.1)
 
@@ -99,12 +138,10 @@ class pid_controller(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = 'event'
         self.room_group_name = self.room_name+"_sharif"
-        #async_to_sync(
         self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
         )
-        print(self.room_group_name)
         await self.accept()
         
         t_sol, y_sol, q_sol = run(0.5, 0.1, 0.1)
@@ -118,6 +155,20 @@ class pid_controller(AsyncWebsocketConsumer):
                     #'ph_deviation': ph_deviation,
                     #'base_addition': base_addition,
             }))
+            
+    # Receive message from room group
+    #async def chat_message(self, event):
+    #    message = event['message']
+    #    print(f"#################33 hello from chat_recieve {message}")
+        
+    async def receive(self, text_data=None, bytes_data=None):
+        print("\n###############################################MESSAGE RECEIVED")
+        data = json.loads(text_data)
+        message = data['message']
+        print(message)
+            
+            
+            
             
             
 class EventConsumer(WebsocketConsumer):
@@ -133,17 +184,17 @@ class EventConsumer(WebsocketConsumer):
         print(self.room_group_name)
         self.accept()
         
-        print("\n#######CONNECTED############")
+        #print("\n#######CONNECTED############")
 
     def disconnect(self, code):
         async_to_sync(self.channel_layer.group_discard)(
             self.room_group_name,
             self.channel_name
         )
-        print("\n############################################DISCONNECED CODE: ",code)
+        #print("\n############################################DISCONNECED CODE: ",code)
 
     def receive(self, text_data=None, bytes_data=None):
-        print("\n###############################################MESSAGE RECEIVED")
+        #print("\n###############################################MESSAGE RECEIVED")
         data = json.loads(text_data)
         message = data['message']
         async_to_sync(self.channel_layer.group_send)(
@@ -153,7 +204,7 @@ class EventConsumer(WebsocketConsumer):
             }
         )
     def send_message_to_frontend(self,event):
-        print("\n##########################################33EVENT TRIGERED")
+        #print("\n##########################################33EVENT TRIGERED")
         # Receive message from room group
         message = event['message']
         # Send message to WebSocket

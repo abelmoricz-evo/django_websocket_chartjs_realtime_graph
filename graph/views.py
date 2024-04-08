@@ -6,9 +6,9 @@ from channels.layers import get_channel_layer
 # gunicorn django_project.asgi --log-level=debug -k uvicorn.workers.UvicornWorker
 
 def event_triger():
-    print("\nhello from event_trigger views.py")
+    #print("\nhello from event_trigger views.py")
     channel_layer = get_channel_layer()
-    print(f"\nchannel layer {channel_layer}\n")
+    #print(f"\nchannel layer {channel_layer}\n")
     async_to_sync(channel_layer.group_send)(
         'event_sharif',
         {
@@ -26,9 +26,9 @@ def update_pid(request):
     P = request.GET['P']
     D = request.GET['D']
     I = request.GET['I']
-    print("\ntriggering event")
+    #print("\ntriggering event")
     event_triger()
-    print("\ntrigger done")
+    #print("\ntrigger done")
     print(f"\nP [{P}] D [{D}] I [{I}]")
     return redirect('/')
 

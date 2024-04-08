@@ -62,6 +62,10 @@
                 </div>
             </form>
 
+
+            <input id="chat-message-input" name="chat-message-input" class="input" type="text" value="300">
+            <button id="chat-message-submit" class="">send to django</button>
+
         </div>
     </div>
 
@@ -110,28 +114,28 @@
 
 
 
-        
+
         const real_pid_chart = document.getElementById('pid_controller');
         let pid_data = {
             type: 'line', data: {
                 labels: Array.from(Array(100).keys()), datasets: [{
-                    label: 'actual', data: [], fill: true, yAxisID: 'y',
+                    label: 'setpoint', data: [], fill: true, yAxisID: 'y',
                     backgroundColor: ['rgba(73, 198, 230, 0.5)',], borderWidth: 2
                 },
                 {
-                    label: 'feed', data: [], fill: true, yAxisID: 'y1',
+                    label: 'actual', data: [], fill: true, yAxisID: 'y1',
                     backgroundColor: ['rgba(73, 98, 200, 0.5)',], borderWidth: 2
                 },
                 {
-                    label: 'input', data: [], fill: true, yAxisID: 'y2',
+                    label: 'changer', data: [], fill: true, yAxisID: 'y2',
                     backgroundColor: ['rgba(130, 20, 120, 0.5)',], borderWidth: 2
                 }]
             }, options: {
                 scales: {
-                    y: { max: 320, min: 290, display: true, position: 'left', },
-                    y1: { max: 320, min: 290, display: true, position: 'right', },
-                    y2: { max: 320, min: 290, display: true, position: 'right', },
-                    
+                    y: { max: 320, min: 0, display: true, position: 'left', },
+                    y1: { max: 320, min: 0, display: true, position: 'right', },
+                    y2: { max: 320, min: 0, display: true, position: 'right', },
+
                 }
             }
         };
@@ -141,7 +145,7 @@
         socket_do.onmessage = function (e) {
             var djangoData = JSON.parse(e.data);
             console.log(djangoData)
-            
+
             var newGraphData = pid_data.data.datasets[0].data;
             newGraphData.push(djangoData.ph_setpoint);
             pid_data.data.datasets[0].data = newGraphData;
@@ -149,13 +153,26 @@
             var ph_actual_data = pid_data.data.datasets[1].data;
             ph_actual_data.push(djangoData.ph_actual);
             pid_data.data.datasets[1].data = ph_actual_data;
-            
+
             var ph_input_data = pid_data.data.datasets[2].data;
             ph_input_data.push(djangoData.ph_changer);
             pid_data.data.datasets[2].data = ph_input_data;
 
             myChart_do.update();
         }
+
+        document.querySelector('#chat-message-submit').onclick = function (e) {
+            const messageInputDom = document.querySelector('#chat-message-input');
+            const text = messageInputDom.value;
+            var messageObject = {
+                'message': { 'username': 'abel---(9999999999)' },
+            }
+            console.log(messageObject)
+            console.log(socket_do.send(JSON.stringify(messageObject)));
+        };
+
+
+
 
         var socket_event = new WebSocket('ws://localhost:8000/ws/event_consumer/')
         socket_event.onmessage = function (e) {
