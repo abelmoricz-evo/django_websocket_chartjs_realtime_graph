@@ -15,64 +15,32 @@
     <div class="title is-size-1 has-text-centered">fermentation tank a</div>
     <div class="title is-subtitle has-text-centered">0 - acid / 14 - base</div>
 
+    <div class="container columns">
+        <p class="column">P</p>
+        <input id="P" name="P" class="column is-narrow" type="number" value="2">
+        <p class="column">D</p>
+        <input id="D" name="D" class="input" type="number" value="0.1">
+        <p class="column">I</p>
+        <input id="I" name="I" class="input" type="number" value="0">
+        <p class="column">setpoint</p>
+        <input id="input_setpoint" name="input_setpoint" class="input" type="number" value="300">
+        <button id="pid_submit" class="button is-link">update</button>
+    </div>
 
 
-
-    <div class="grid pd-large">
-        <div class="cell">
+    <!--<div class="cell">
             this is a hard coded example of a pid controller where you can change p,d,i,sp in code ;)
             <canvas id="myChart" width="400" height="200"></canvas>
-        </div>
+        </div>-->
 
-        <div class="cell">
-            this is an interactive example of a pid controller
-            <canvas id="pid_controller" width="400" height="200"></canvas>
-
-            <form class="grid" method="get" action="/update_pid/">
-                <div class="field cell">
-                    <label class="label">P</label>
-                    <div class="control">
-                        <input id="P" name="P" class="input" type="number" value="2">
-                    </div>
-                </div>
-                <div class="field cell">
-                    <label class="label">D</label>
-                    <div class="control">
-                        <input id="D" name="D" class="input" type="number" value="0.1">
-                    </div>
-                </div>
-                <div class="field cell">
-                    <label class="label">I</label>
-                    <div class="control">
-                        <input id="I" name="I" class="input" type="number" value="0">
-                    </div>
-                </div>
-                <div class="field cell">
-                    <label class="label">setpoint</label>
-                    <div class="control">
-                        <input id="setpoint" name="setpoint" class="input" type="number" value="300">
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label class="label">.</label>
-                    <div class="control">
-                        <button class="button is-link">update</button>
-                    </div>
-                </div>
-            </form>
-
-
-            <input id="chat-message-input" name="chat-message-input" class="input" type="text" value="300">
-            <button id="chat-message-submit" class="">send to django</button>
-
-        </div>
+    <div class="columns">
+        <canvas class="column is-half" id="pid_controller"></canvas>
     </div>
 
 
 
     <script>
-
+        /*
         // this is a hard coded example of a pid controller where you can change p,d,i,sp in code ;)
         const ctx = document.getElementById('myChart');
         let graphData = {
@@ -109,7 +77,7 @@
 
             myChart.update();
         }
-
+*/
 
 
 
@@ -144,7 +112,7 @@
         var socket_do = new WebSocket('ws://localhost:8000/ws/pid/')
         socket_do.onmessage = function (e) {
             var djangoData = JSON.parse(e.data);
-            console.log(djangoData)
+            //console.log(djangoData)
 
             var newGraphData = pid_data.data.datasets[0].data;
             newGraphData.push(djangoData.ph_setpoint);
@@ -161,25 +129,30 @@
             myChart_do.update();
         }
 
-        document.querySelector('#chat-message-submit').onclick = function (e) {
-            const messageInputDom = document.querySelector('#chat-message-input');
-            const text = messageInputDom.value;
-            var messageObject = {
-                'message': { 'username': 'abel---(9999999999)' },
+        document.querySelector('#pid_submit').onclick = function (e) {
+            const input_P = document.querySelector('#P').value;
+            const input_D = document.querySelector('#D').value;
+            const input_I = document.querySelector('#I').value;
+            const input_setpoint = document.querySelector('#input_setpoint').value;
+            var messageObject = { 
+                'input_P':input_P,
+                'input_D':input_D, 
+                'input_I':input_I,
+                'input_setpoint': input_setpoint,
             }
             console.log(messageObject)
-            console.log(socket_do.send(JSON.stringify(messageObject)));
+            socket_do.send(JSON.stringify(messageObject));
         };
 
 
 
-
+        /*
         var socket_event = new WebSocket('ws://localhost:8000/ws/event_consumer/')
         socket_event.onmessage = function (e) {
             var djangoData = JSON.parse(e.data);
             console.log(djangoData)
         }
-
+        */
 
     </script>
 </body>

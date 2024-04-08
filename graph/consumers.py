@@ -10,7 +10,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 import sys, asyncio
-
 import struct
 import minimalmodbus
 import serial
@@ -155,6 +154,8 @@ class pid_controller(AsyncWebsocketConsumer):
                     #'ph_deviation': ph_deviation,
                     #'base_addition': base_addition,
             }))
+            #mtime.sleep(1)
+        
             
     # Receive message from room group
     #async def chat_message(self, event):
@@ -164,8 +165,19 @@ class pid_controller(AsyncWebsocketConsumer):
     async def receive(self, text_data=None, bytes_data=None):
         print("\n###############################################MESSAGE RECEIVED")
         data = json.loads(text_data)
-        message = data['message']
-        print(message)
+        #message = data['message']
+        print(data)
+        
+        t_sol, y_sol, q_sol = run(0.5, 0.1, 0.1)
+        for t, y, q in zip(t_sol, y_sol, q_sol):
+            await self.send(json.dumps({ 
+                    'hour': t,
+                    'ph_actual': y, 
+                    'ph_setpoint': setpoint, 
+                    'ph_changer': q,
+                    #'ph_deviation': ph_deviation,
+                    #'base_addition': base_addition,
+            }))
             
             
             
