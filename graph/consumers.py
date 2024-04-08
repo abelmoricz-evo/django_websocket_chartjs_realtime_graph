@@ -14,8 +14,8 @@ import struct
 import minimalmodbus
 import serial
 
-if sys.platform == "win32" and (3, 8, 0) <= sys.version_info < (3, 9, 0):
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+#if sys.platform == "win32" and (3, 8, 0) <= sys.version_info < (3, 9, 0):
+#    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
 time = 0
@@ -59,14 +59,19 @@ def get_ph_actual():
 
 def PID(Kp, Ki, Kd, setpoint, measurement):
     global time, integral, time_prev, e_prev# Value of offset - when the error is equal zero
-    offset = 320
+    #offset = 320
 
     # PID calculations
     e = setpoint - measurement
+    
     P = Kp*e
-    integral = integral + Ki*e*(time - time_prev)
+
     D = Kd*(e - e_prev)/(time - time_prev)# calculate manipulated variable - MV
-    MV = offset + P + integral + D
+    
+    integral = integral + Ki*e*(time - time_prev)
+    
+    #MV = offset + P + integral + D
+    MV = P + integral + D
 
     # update stored data for next iteration
     e_prev = e
@@ -81,21 +86,21 @@ def system(t, temp, Tq):
     dTdt = 1/(tau*(1+epsilon)) * (Tf-temp) + Q/(1+epsilon)*(Tq-temp)
     return dTdt
 
-def run(P=2, D=0, I=0.1, sim=True):
+def run(P=2, D=0, I=0.1, setpoint=300, sim=True):
     global time, integral, time_prev, e_prev# Value of offset - when the error is equal zero
-    global setpoint
+    #global setpoint
 
     # number of steps
     n = 100
     time_prev = 0
-    y0 = 300
+    y0 = 100
     deltat = 1
     y_sol = [y0]
     t_sol = [time_prev]# Tq is chosen as a manipulated variable
     Tq = 10,#320,
     q_sol = [Tq[0]]
     #setpoint = 300
-    integral = 0
+    #integral = 0
     for i in range(1, n):
         time = i * deltat
         tspan = np.linspace(time_prev, time, 10)
@@ -105,34 +110,24 @@ def run(P=2, D=0, I=0.1, sim=True):
             Tq = PID(P, I, D, setpoint, y_sol[-1]),
             #print(f"control value: {Tq}")
             # actual value
-            yi = odeint(system,y_sol[-1], tspan, args = Tq, tfirst=True)
+            yi = odeint(system, y_sol[-1], tspan, args = Tq, tfirst=True)
             #real_ph = get_ph_actual()
             #print(f"real ph: {real_ph}")
-            
+        
+        # time    
         t_sol.append(time)
+        # actual value
         y_sol.append(yi[-1][0])
+        # amount of input
         q_sol.append(Tq[0])
+        
         time_prev = time
     return t_sol, y_sol, q_sol
-
-class GraphConsumer(AsyncWebsocketConsumer):
-    global setpoint
-
-    async def connect(self):
-        await self.accept()
-        
-        t_sol, y_sol, q_sol = run()
-        for t, y in zip(t_sol, y_sol):
-            await self.send(json.dumps({ 
-                    'hour': t,
-                    'ph_actual': y, 
-                    'ph_setpoint': setpoint, 
-            }))
-            #await time.sleep(0.1)
 
 
 
 class pid_controller(AsyncWebsocketConsumer):
+    
     
     async def connect(self):
         self.room_name = 'event'
@@ -142,25 +137,7 @@ class pid_controller(AsyncWebsocketConsumer):
             self.channel_name
         )
         await self.accept()
-        
-        t_sol, y_sol, q_sol = run(0.5, 0.1, 0.1)
-        
-        for t, y, q in zip(t_sol, y_sol, q_sol):
-            await self.send(json.dumps({ 
-                    'hour': t,
-                    'ph_actual': y, 
-                    'ph_setpoint': setpoint, 
-                    'ph_changer': q,
-                    #'ph_deviation': ph_deviation,
-                    #'base_addition': base_addition,
-            }))
-            #mtime.sleep(1)
-        
-            
-    # Receive message from room group
-    #async def chat_message(self, event):
-    #    message = event['message']
-    #    print(f"#################33 hello from chat_recieve {message}")
+
         
     async def receive(self, text_data=None, bytes_data=None):
         print("\n###############################################MESSAGE RECEIVED")
@@ -168,20 +145,24 @@ class pid_controller(AsyncWebsocketConsumer):
         #message = data['message']
         print(data)
         
-        t_sol, y_sol, q_sol = run(0.5, 0.1, 0.1)
+        #await self.accept()
+        
+        t_sol, y_sol, q_sol = run(float(data['input_P']), float(data['input_D']), float(data['input_I']),float(data['input_setpoint']))
         for t, y, q in zip(t_sol, y_sol, q_sol):
             await self.send(json.dumps({ 
                     'hour': t,
                     'ph_actual': y, 
-                    'ph_setpoint': setpoint, 
+                    'ph_setpoint': float(data['input_setpoint']), 
                     'ph_changer': q,
                     #'ph_deviation': ph_deviation,
                     #'base_addition': base_addition,
+                    
             }))
             
             
             
-            
+
+'''       
             
 class EventConsumer(WebsocketConsumer):
     def connect(self, text_data=None):
@@ -224,4 +205,4 @@ class EventConsumer(WebsocketConsumer):
             'message': message
         }))
 
-
+'''

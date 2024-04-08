@@ -16,14 +16,14 @@
     <div class="title is-subtitle has-text-centered">0 - acid / 14 - base</div>
 
     <div class="container columns">
-        <p class="column">P</p>
-        <input id="P" name="P" class="column is-narrow" type="number" value="2">
-        <p class="column">D</p>
-        <input id="D" name="D" class="input" type="number" value="0.1">
-        <p class="column">I</p>
-        <input id="I" name="I" class="input" type="number" value="0">
-        <p class="column">setpoint</p>
-        <input id="input_setpoint" name="input_setpoint" class="input" type="number" value="300">
+        <p class="column is-narrow">P</p>
+        <input id="P" name="P" class="column is-narrow" type="number" value="0.1">
+        <p class="column is-narrow">D</p>
+        <input id="D" name="D" class="column is-narrow" type="number" value="0.0">
+        <p class="column is-narrow">I</p>
+        <input id="I" name="I" class="column is-narrow" type="number" value="0.0">
+        <p class="column is-narrow">setpoint</p>
+        <input id="input_setpoint" name="input_setpoint" class=" column is-narrow" type="number" value="30">
         <button id="pid_submit" class="button is-link">update</button>
     </div>
 
@@ -33,13 +33,31 @@
             <canvas id="myChart" width="400" height="200"></canvas>
         </div>-->
 
-    <div class="columns">
-        <canvas class="column is-half" id="pid_controller"></canvas>
+    <div class="grid">
+        <div class="cell">
+            <canvas id="pid_controller"></canvas>
+        </div>
+        <div class="cell">
+            <table class="table is-bordered">
+                <thead>
+                    <th>hour</th>
+                    <th>setpoint</th>
+                    <th>observed</th>
+                    <th>changer</th>
+
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
     </div>
 
 
-
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+ 
     <script>
+        
         /*
         // this is a hard coded example of a pid controller where you can change p,d,i,sp in code ;)
         const ctx = document.getElementById('myChart');
@@ -80,9 +98,6 @@
 */
 
 
-
-
-
         const real_pid_chart = document.getElementById('pid_controller');
         let pid_data = {
             type: 'line', data: {
@@ -100,9 +115,9 @@
                 }]
             }, options: {
                 scales: {
-                    y: { max: 320, min: 0, display: true, position: 'left', },
-                    y1: { max: 320, min: 0, display: true, position: 'right', },
-                    y2: { max: 320, min: 0, display: true, position: 'right', },
+                    y: { max: 100, min: 0, display: true, position: 'left', },
+                    y1: { max: 100, min: 0, display: true, position: 'right', },
+                    y2: { max: 100, min: 0, display: true, position: 'right', },
 
                 }
             }
@@ -112,7 +127,7 @@
         var socket_do = new WebSocket('ws://localhost:8000/ws/pid/')
         socket_do.onmessage = function (e) {
             var djangoData = JSON.parse(e.data);
-            //console.log(djangoData)
+            console.log(djangoData)
 
             var newGraphData = pid_data.data.datasets[0].data;
             newGraphData.push(djangoData.ph_setpoint);
@@ -127,19 +142,29 @@
             pid_data.data.datasets[2].data = ph_input_data;
 
             myChart_do.update();
+
+            //var div = document.createElement('div',id=djangoData.hour);
+            //console.log(div)
+            //div.innerHTML = djangoData.ph_actual;
         }
 
         document.querySelector('#pid_submit').onclick = function (e) {
+            pid_data.data.datasets[0].data = []
+            pid_data.data.datasets[1].data = []
+            pid_data.data.datasets[2].data = []
+
             const input_P = document.querySelector('#P').value;
             const input_D = document.querySelector('#D').value;
             const input_I = document.querySelector('#I').value;
             const input_setpoint = document.querySelector('#input_setpoint').value;
-            var messageObject = { 
-                'input_P':input_P,
-                'input_D':input_D, 
-                'input_I':input_I,
+            var messageObject = {
+                'input_P': input_P,
+                'input_D': input_D,
+                'input_I': input_I,
                 'input_setpoint': input_setpoint,
             }
+            
+    
             console.log(messageObject)
             socket_do.send(JSON.stringify(messageObject));
         };
