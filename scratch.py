@@ -73,25 +73,30 @@ def run(P=1, D=0, I=0, setpoint=6.000000):
         print(f"\n{ph_measure_before}     :pH MEASUREMENT used for calculating PID from previous run")
         print(f"{setpoint }          :pH setpoint")
         print(f"{round(setpoint-ph_measure_before,6)}    :pH difference")
+        
         if round(setpoint-ph_measure_before,6) > 0:
             if round(setpoint-ph_measure_before,6) > 1:
                 Tq = (67 * 33) + 5529, # max rpm
                 rpms = 33
             else:
-                Tq = PID(P, I, D, setpoint, y_sol[-1])
-                Tq = ((33*Tq) * 67) + 5529, # pid rpm
-                rpms = (33*Tq)[0]
+                Tqq = PID(P, I, D, setpoint, y_sol[-1])
+                Tq = ((33*Tqq) * 67) + 5529, # pid rpm
+                rpms = (33*Tqq)
+                #print(rpms)
         else:
             Tq = 5300, # 5529, # min rpm
             rpms = 0
      
-        print(f"{round(Tq[0],6)}    :raw input for    {rpms}    rpm INPUT according to PID")
+        print(f"{round(Tq[0],6)} :raw input for {rpms} rpm INPUT according to PID")
 
         yi = [[ph_measure_before]]
-
         
-        for j in range(2048,3000):
+        START_TIME = time.time()
+        ELAPSED_TIME = 0
+        while ELAPSED_TIME < 30:
             c.write_multiple_registers(2048,[int(Tq[0])])
+            ELAPSED_TIME = time.time() - START_TIME
+            print(f"elapsed time: {ELAPSED_TIME}")
             #time.sleep(1)
 
         t_sol.append(time)      # time
@@ -99,7 +104,6 @@ def run(P=1, D=0, I=0, setpoint=6.000000):
         q_sol.append(Tq[0])     # amount of input
         
         time_prev = ptime
-    
     return t_sol, y_sol, q_sol
 
 # DO NOT PUT P above 1 this has been put as the max speed
