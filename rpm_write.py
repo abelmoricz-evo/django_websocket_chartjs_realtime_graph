@@ -2,7 +2,7 @@ import minimalmodbus
 from random import randint
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.integrate import odeint
+#from scipy.integrate import odeint
 import struct
 import minimalmodbus
 import serial
@@ -58,8 +58,12 @@ def get_weidmuller():
     START = 2048
     END = 4000#2054
 
+    # 0 (2V) = 5529
+    #   (10V) = 27645
+    # 6 V = 16587
+
     for i in range(START,END):
-        c.write_multiple_registers(i,[int(27648/10)])
+        c.write_multiple_registers(2048,[6634])
     
     for i in range(START,END):
         values = c.read_holding_registers(i,1)        
