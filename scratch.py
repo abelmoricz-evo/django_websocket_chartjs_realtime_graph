@@ -3,6 +3,7 @@ import random
 import numpy as np
 #from scipy.integrate import odeint
 import struct
+import datetime
 import minimalmodbus
 import serial
 import psycopg2
@@ -13,6 +14,31 @@ ptime = 0
 integral = 0
 time_prev = -1e-6
 e_prev = 0
+
+def calculate_float(low, high):
+    t = (low, high)
+    packed_string = struct.pack("HH", *t)
+    return struct.unpack("f", packed_string)[0]
+
+
+def get_instrument(port_name):  
+    instrument = minimalmodbus.Instrument(port_name, 1) 
+    instrument.serial.baudrate = 19200 
+    instrument.serial.bytesize = 8 
+    instrument.serial.parity = serial.PARITY_NONE 
+    instrument.serial.stopbits = 1 
+    instrument.serial.timeout = 1 
+    instrument.mode = minimalmodbus.MODE_RTU 
+    instrument.close_port_after_each_call = True 
+    return instrument
+
+def get_ph_data(instrument):
+    temp = instrument.read_registers(registeraddress=2409, functioncode=3, number_of_registers=10) 
+    temp = calculate_float(temp[2],temp[3]) 
+    ph = instrument.read_registers(registeraddress=2089, functioncode=3, number_of_registers=10) 
+    ph = calculate_float(ph[2],ph[3]) 
+    return ph
+
 
 def reload_RAW_db():
     connection = psycopg2.connect(user="postgres",password="bgfg-3-D5Cgg15B4412A3c4-33d444Cb",host="viaduct.proxy.rlwy.net",port="55958",database="RAW")
@@ -55,8 +81,10 @@ def system(t, temp, Tq):
 
 def run(P=1, D=0, I=0, setpoint=6.000000):
     global ptime, time_prev# Value of offset - when the error is equal zero
+    instrument = get_instrument('COM4')
 
-    n = 100
+
+    n = 1000
     deltat = 1
     y_sol = [7]           # get latest ph measurement
     t_sol = [time_prev]    
@@ -68,8 +96,9 @@ def run(P=1, D=0, I=0, setpoint=6.000000):
         ptime = i * deltat
         tspan = np.linspace(time_prev, ptime, 10)
         
-        ph_measure_before = round(get_db_ph(),6)
-        ph_measure_before = 5.8
+        ph_measure_before = get_ph_data(instrument) #round(get_db_ph(),6) 
+        #ph_measure_before = 5.8
+        print(f"\n{datetime.datetime.now()}")
         print(f"\n{ph_measure_before}     :pH MEASUREMENT used for calculating PID from previous run")
         print(f"{setpoint }          :pH setpoint")
         print(f"{round(setpoint-ph_measure_before,6)}    :pH difference")
@@ -93,11 +122,12 @@ def run(P=1, D=0, I=0, setpoint=6.000000):
         
         START_TIME = time.time()
         ELAPSED_TIME = 0
-        while ELAPSED_TIME < 30:
+        while ELAPSED_TIME < 5:
             c.write_multiple_registers(2048,[int(Tq[0])])
             ELAPSED_TIME = time.time() - START_TIME
-            print(f"elapsed time: {ELAPSED_TIME}")
-            #time.sleep(1)
+            #if ELAPSED_TIME % 1 == 0:
+            #print(f"writing {int(Tq[0])} elapsed time: {ELAPSED_TIME}")
+            #time.sleep(4)
 
         t_sol.append(time)      # time
         y_sol.append(yi[-1][0]) # actual value
