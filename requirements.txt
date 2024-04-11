@@ -57,6 +57,7 @@ matplotlib
 scipy
 pyserial
 psycopg2
+pandas
 
 hiredis==2.1.0
     # via aioredis

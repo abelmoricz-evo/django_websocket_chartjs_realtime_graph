@@ -74,14 +74,17 @@ DATABASES = {
 #REDIS_URL = f"redis://{config('REDISUSER', default='default')}:{config('REDISPASSWORD', default='')}@{config('REDISHOST', default='redis')}:{config('REDISPORT', default=6379)}"
 # os.getenv()
 
+if DEBUG:
+    redis_url = "redis://default:uWGQfGJvFkZthdOOAhCzSaFiapKnjTeE@roundhouse.proxy.rlwy.net:44817" #os.environ.get('REDIS_CHANNEL_LAYER_URL')
+else:
+    redis_url = ('127.0.0.1', 6379)
+    
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         
         'CONFIG': {
-            #'hosts': [('127.0.0.1', 6379)]
-            "hosts": [os.environ.get('REDIS_CHANNEL_LAYER_URL')],
-            #'hosts': [('roundhouse.proxy.rlwy.net', 44817)]
+            "hosts": [redis_url],
         }
     }
     #"default": {

@@ -5,8 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-   
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
     <title>pid controller</title>
@@ -30,31 +29,10 @@
         <button id="pid_submit" class="button is-link">update</button>
     </div>
 
-
-    <!--<div class="cell">
-            this is a hard coded example of a pid controller where you can change p,d,i,sp in code ;)
-            <canvas id="myChart" width="400" height="200"></canvas>
-        </div>-->
-
     <div class="grid">
         <div class="cell">
             <canvas width="400" height="100" id="pid_controller"></canvas>
         </div>
-       
-       <!-- <div class="cell">
-            <table class="table is-bordered">
-                <thead>
-                    <th>hour</th>
-                    <th>setpoint</th>
-                    <th>observed</th>
-                    <th>changer</th>
-
-                </thead>
-                <tbody>
-
-                </tbody>
-            </table>
-        </div> -->
     </div>
 
 
@@ -62,45 +40,7 @@
  
     <script>
         
-        /*
-        // this is a hard coded example of a pid controller where you can change p,d,i,sp in code ;)
-        const ctx = document.getElementById('myChart');
-        let graphData = {
-            type: 'line', data: {
-                labels: Array.from(Array(100).keys()),
-                datasets: [{
-                    label: 'setpoint', data: [], fill: false,
-                    borderWidth: 2
-                }, {
-                    label: 'actual', data: [], fill: true,
-                    backgroundColor: ['rgba(73, 198, 230, 0.5)',], borderWidth: 2
-                }
-                ]
-            }, options: {
-                scales: {
-                    y: { max: 320, min: 290, display: true, position: 'left', },
-                    y1: { max: 320, min: 290, display: true, position: 'right', }
-                }
-            }
-        };
-        var myChart = new Chart(ctx, graphData);
-
-        var socket = new WebSocket('ws://localhost:8000/ws/graph/')
-        socket.onmessage = function (e) {
-            var djangoData = JSON.parse(e.data);
-
-            var newGraphData = graphData.data.datasets[0].data;
-            newGraphData.push(djangoData.ph_setpoint);
-            graphData.data.datasets[0].data = newGraphData;
-
-            var ph_actual_data = graphData.data.datasets[1].data;
-            ph_actual_data.push(djangoData.ph_actual);
-            graphData.data.datasets[1].data = ph_actual_data;
-
-            myChart.update();
-        }
-*/
-        
+      
         const real_pid_chart = document.getElementById('pid_controller');
         let pid_data = {
             type: 'line', data: {
@@ -112,17 +52,12 @@
                 {
                     label: 'actual', data: [], fill: false, yAxisID: 'y1',
                     backgroundColor: ['rgba(73, 98, 200, 0.5)',], borderWidth: 2
-                },
-                {
-                    label: 'rpm', data: [], fill: false, yAxisID: 'y2',
-                    backgroundColor: ['rgba(130, 20, 120, 0.5)',], borderWidth: 2
-                }]
+                },]
             }, options: {
                 scales: {
                     x: {type: 'timeseries',},
-                    y: { max: 8, min: 4, display: true, position: 'left', },
-                    y1: { max: 8, min: 4, display: true, position: 'left', },
-                    y2: { max: 0, min: 34, display: true, position: 'right', },
+                    //y: { max: 8, min: 4, display: true, position: 'left', },
+                    //y1: { max: 8, min: 4, display: true, position: 'left', },
                 }
             }
         };
@@ -144,10 +79,6 @@
             var ph_actual_data = pid_data.data.datasets[1].data;
             ph_actual_data.push(djangoData.ph_actual);
             pid_data.data.datasets[1].data = ph_actual_data;
-
-            var ph_input_data = pid_data.data.datasets[2].data;
-            ph_input_data.push(djangoData.ph_changer);
-            pid_data.data.datasets[2].data = ph_input_data;
 
             myChart_do.update();
         }
