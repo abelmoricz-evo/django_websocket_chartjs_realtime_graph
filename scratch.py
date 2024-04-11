@@ -67,17 +67,6 @@ def PID(Kp, Ki, Kd, setpoint, measurement):
     else:
         return 0
 
-'''
-def system(t, temp, Tq):
-    epsilon = 1
-    tau = 4
-    Tf = 300
-    Q = 2
-    dTdt = 1/(tau*(1+epsilon)) * (Tf-temp) + Q/(1+epsilon)*(Tq-temp)
-    return random.uniform(5.0,7.0)
-    return dTdt
-'''
-
 
 def run(P=1, D=0, I=0, setpoint=6.000000):
     global ptime, time_prev# Value of offset - when the error is equal zero

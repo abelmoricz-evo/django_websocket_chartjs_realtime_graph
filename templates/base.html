@@ -5,6 +5,9 @@
 <head>
     <meta charset="UTF-8">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+   
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
     <title>pid controller</title>
 </head>
@@ -35,9 +38,10 @@
 
     <div class="grid">
         <div class="cell">
-            <canvas id="pid_controller"></canvas>
+            <canvas width="400" height="100" id="pid_controller"></canvas>
         </div>
-        <div class="cell">
+       
+       <!-- <div class="cell">
             <table class="table is-bordered">
                 <thead>
                     <th>hour</th>
@@ -50,7 +54,7 @@
 
                 </tbody>
             </table>
-        </div>
+        </div> -->
     </div>
 
 
@@ -96,29 +100,29 @@
             myChart.update();
         }
 */
-
-
+        
         const real_pid_chart = document.getElementById('pid_controller');
         let pid_data = {
             type: 'line', data: {
-                labels: Array.from(Array(100).keys()), datasets: [{
-                    label: 'setpoint', data: [], fill: true, yAxisID: 'y',
+                labels:[], //Array.from(Array(100).keys()), 
+                datasets: [{
+                    label: 'setpoint', data: [], fill: false, yAxisID: 'y',
                     backgroundColor: ['rgba(73, 198, 230, 0.5)',], borderWidth: 2
                 },
                 {
-                    label: 'actual', data: [], fill: true, yAxisID: 'y1',
+                    label: 'actual', data: [], fill: false, yAxisID: 'y1',
                     backgroundColor: ['rgba(73, 98, 200, 0.5)',], borderWidth: 2
                 },
                 {
-                    label: 'changer', data: [], fill: true, yAxisID: 'y2',
+                    label: 'rpm', data: [], fill: false, yAxisID: 'y2',
                     backgroundColor: ['rgba(130, 20, 120, 0.5)',], borderWidth: 2
                 }]
             }, options: {
                 scales: {
-                    y: { max: 100, min: 0, display: true, position: 'left', },
-                    y1: { max: 100, min: 0, display: true, position: 'right', },
-                    y2: { max: 100, min: 0, display: true, position: 'right', },
-
+                    x: {type: 'timeseries',},
+                    y: { max: 8, min: 4, display: true, position: 'left', },
+                    y1: { max: 8, min: 4, display: true, position: 'left', },
+                    y2: { max: 0, min: 34, display: true, position: 'right', },
                 }
             }
         };
@@ -128,6 +132,10 @@
         socket_do.onmessage = function (e) {
             var djangoData = JSON.parse(e.data);
             console.log(djangoData)
+
+            var newLabels = pid_data.data.labels;
+            newLabels.push(djangoData.hour);
+            pid_data.data.labels = newLabels;
 
             var newGraphData = pid_data.data.datasets[0].data;
             newGraphData.push(djangoData.ph_setpoint);
@@ -142,17 +150,9 @@
             pid_data.data.datasets[2].data = ph_input_data;
 
             myChart_do.update();
-
-            //var div = document.createElement('div',id=djangoData.hour);
-            //console.log(div)
-            //div.innerHTML = djangoData.ph_actual;
         }
 
         document.querySelector('#pid_submit').onclick = function (e) {
-            pid_data.data.datasets[0].data = []
-            pid_data.data.datasets[1].data = []
-            pid_data.data.datasets[2].data = []
-
             const input_P = document.querySelector('#P').value;
             const input_D = document.querySelector('#D').value;
             const input_I = document.querySelector('#I').value;
@@ -163,21 +163,10 @@
                 'input_I': input_I,
                 'input_setpoint': input_setpoint,
             }
-            
-    
             console.log(messageObject)
             socket_do.send(JSON.stringify(messageObject));
         };
 
-
-
-        /*
-        var socket_event = new WebSocket('ws://localhost:8000/ws/event_consumer/')
-        socket_event.onmessage = function (e) {
-            var djangoData = JSON.parse(e.data);
-            console.log(djangoData)
-        }
-        */
 
     </script>
 </body>
