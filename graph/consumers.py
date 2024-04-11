@@ -6,10 +6,8 @@ import psycopg2
 import datetime
 import numpy as np
 import pandas as pd
-import minimalmodbus
 from asyncio import sleep
 from asgiref.sync import async_to_sync
-from pyModbusTCP.client import ModbusClient
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 
