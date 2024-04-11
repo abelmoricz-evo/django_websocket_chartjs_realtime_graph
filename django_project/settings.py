@@ -25,8 +25,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'channels',     # 3rd Party
-    'graph',        # Local
+    'channels',             # 3rd Party
+    'django_celery_results' # 3rd Party
+    'graph',                # Local
 ]
 
 MIDDLEWARE = [
@@ -77,7 +78,8 @@ DATABASES = {
 if DEBUG:
     redis_url = "redis://default:uWGQfGJvFkZthdOOAhCzSaFiapKnjTeE@roundhouse.proxy.rlwy.net:44817" #os.environ.get('REDIS_CHANNEL_LAYER_URL')
 else:
-    redis_url = ('127.0.0.1', 6379)
+    #redis_url = ('127.0.0.1', 6379)
+    redis_url = "redis://localhost:6379"
     
 CHANNEL_LAYERS = {
     'default': {
@@ -87,11 +89,16 @@ CHANNEL_LAYERS = {
             "hosts": [redis_url],
         }
     }
-    #"default": {
-    #    "BACKEND": "django.core.cache.backends.redis.RedisCache",
-    #    "LOCATION": REDIS_URL,
-    #}
 }
+
+
+#CELERY SETTINGS
+CELERY_BROKER_URL = f"{redis_url}"
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_BACKEND = 'django-db'
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators

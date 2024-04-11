@@ -32,3 +32,13 @@ def update_pid(request):
     print(f"\nP [{P}] D [{D}] I [{I}]")
     return redirect('/')
 
+from django.apps import AppConfig
+
+
+class MyAppConfig(AppConfig):
+    # ...
+
+    def ready(self):
+        # Import celery app now that Django is mostly ready.
+        # This initializes Celery and autodiscovers tasks
+        import myapp.celery
