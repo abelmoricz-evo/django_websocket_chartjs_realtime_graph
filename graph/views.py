@@ -1,44 +1,11 @@
 from django.shortcuts import render, redirect
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 
-
-# gunicorn django_project.asgi --log-level=debug -k uvicorn.workers.UvicornWorker
-
-def event_triger():
-    #print("\nhello from event_trigger views.py")
-    channel_layer = get_channel_layer()
-    #print(f"\nchannel layer {channel_layer}\n")
-    async_to_sync(channel_layer.group_send)(
-        'event_sharif',
-        {
-            'type': 'send_message_to_frontend',
-            'message': "event_trigered_from_views"
-        }
-    ) 
-
+# Create your views here.
 def index(request):
-    context = {}
-    event_triger()
-    return render(request, 'base.html', context=context)
+    return render(request, 'base.html', context={'text': 'hello django websocket chartjs world'})
 
-def update_pid(request):
-    P = request.GET['P']
-    D = request.GET['D']
-    I = request.GET['I']
-    #print("\ntriggering event")
-    event_triger()
-    #print("\ntrigger done")
-    print(f"\nP [{P}] D [{D}] I [{I}]")
+def update_setpoint(request):
+    ph_setpoint = request.GET['ph_setpoint']
+    print(f"ph_setpoint: {ph_setpoint}")
     return redirect('/')
 
-from django.apps import AppConfig
-
-
-class MyAppConfig(AppConfig):
-    # ...
-
-    def ready(self):
-        # Import celery app now that Django is mostly ready.
-        # This initializes Celery and autodiscovers tasks
-        import myapp.celery
