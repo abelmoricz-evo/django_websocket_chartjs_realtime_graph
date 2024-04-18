@@ -1,3 +1,4 @@
 # Project exclude paths
 /.venv/
 .idea
+django_project/__pycache__/*
