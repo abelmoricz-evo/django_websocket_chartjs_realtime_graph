@@ -1,85 +1,62 @@
 import json
-import time
-import serial
-import random
-import psycopg2
-import datetime
-import numpy as np
-import pandas as pd
+import math
+from random import randint
 from asyncio import sleep
-from asgiref.sync import async_to_sync
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 
 
-class pid_controller(AsyncWebsocketConsumer):
+SECONDS_PAUSE = 0.5
+
+
+
+class GraphConsumer(AsyncWebsocketConsumer):
+    global SECONDS_PAUSE
+    XO = 4.08E-31
+    XO = 0.001
+
+    def exp(self, x):
+        return self.XO * math.exp(0.75 * x)
+
+    async def connect(self):
+        await self.accept()
+
+        total_base_added = 0
+        for i in range(0,100):
+            bacteria_ph = self.exp(i)
+            total_base_added = total_base_added + self.exp(i)
+            await self.send(json.dumps({ 
+                'value': round(bacteria_ph,6), 
+                'index': round(i,6), 
+                'sum': round(total_base_added,6),
+                'pump_setpoint': 2,
+            }))
+            await sleep(SECONDS_PAUSE)
+
+
+
+class do_and_feed_consumer(AsyncWebsocketConsumer):
+    global SECONDS_PAUSE
+
+    def exp(self, x):
+        MUE = 0.155
+        return 0.9 * math.exp(x * MUE)
     
     async def connect(self):
-        self.room_name = 'event'
-        self.room_group_name = self.room_name+"_sharif"
-        self.channel_layer.group_add( self.room_group_name, self.channel_name)
-        await self.accept()
-        
-        for i in range(0,10):
-            await self.send(json.dumps({ 
-                    'hour': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    'ph_actual': random.randint(0,10), 
-                    'ph_setpoint': random.randint(5,15), 
-            }))
-            time.sleep(0.5)
-        
+            await self.accept()
+            for i in range(0,100):
+                if i < 29:
+                    bacteria_ph = self.exp(i)
+                    feed_value = 0
+                else:
+                    bacteria_ph = self.exp(28) * pow(0.9995, float(i-28))
+                    feed_value = 5
+                await self.send(json.dumps({
+                    'value': bacteria_ph, 
+                    'feed_value': feed_value,
+                    'index': i,
+                }))
+                await sleep(SECONDS_PAUSE)
 
-    async def receive(self, text_data=None, bytes_data=None):
-        print("\n###############################################MESSAGE RECEIVED")
-        data = json.loads(text_data)
-        #message = data['message']
-        print(data)
-        
 
-        
-        
 
-'''       
-            
-class EventConsumer(WebsocketConsumer):
-    def connect(self, text_data=None):
-        # self.room_name = self.scope['url_route']['kwargs']['room_name']
-        # self.room_group_name = 'chat_%s' % self.room_name
-        self.room_name = 'event'
-        self.room_group_name = self.room_name+"_sharif"
-        async_to_sync(self.channel_layer.group_add)(
-            self.room_group_name,
-            self.channel_name
-        )
-        print(self.room_group_name)
-        self.accept()
-        
-        #print("\n#######CONNECTED############")
-
-    def disconnect(self, code):
-        async_to_sync(self.channel_layer.group_discard)(
-            self.room_group_name,
-            self.channel_name
-        )
-        #print("\n############################################DISCONNECED CODE: ",code)
-
-    def receive(self, text_data=None, bytes_data=None):
-        #print("\n###############################################MESSAGE RECEIVED")
-        data = json.loads(text_data)
-        message = data['message']
-        async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name,{
-                "type": 'send_message_to_frontend',
-                "message": message
-            }
-        )
-    def send_message_to_frontend(self,event):
-        #print("\n##########################################33EVENT TRIGERED")
-        # Receive message from room group
-        message = event['message']
-        # Send message to WebSocket
-        self.send(text_data=json.dumps({
-            'message': message
-        }))
-
-'''
