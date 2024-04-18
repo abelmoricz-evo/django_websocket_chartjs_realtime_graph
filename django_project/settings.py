@@ -26,7 +26,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'channels',             # 3rd Party
-    'django_celery_results' # 3rd Party
+    'django_celery_results', # 3rd Party
     'graph',                # Local
 ]
 

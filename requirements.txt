@@ -45,14 +45,6 @@ cryptography==38.0.4
 daphne==3.0.2
     # via channels
 django==4.1.4
-#django==3.2.9
-
-#django
-    # via
-    #   -r requirements.in
-    #   channels
-
-
 gunicorn==20.1.0
 uvicorn
 matplotlib
@@ -61,6 +53,8 @@ pyserial
 psycopg2
 pandas
 celery
+django-celery-results
+
 
 hiredis==2.1.0
     # via aioredis
