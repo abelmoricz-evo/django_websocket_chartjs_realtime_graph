@@ -60,7 +60,7 @@ scipy
 pyserial
 psycopg2
 pandas
-Celery
+celery
 
 hiredis==2.1.0
     # via aioredis
