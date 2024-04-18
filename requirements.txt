@@ -36,6 +36,8 @@ channels-redis==3.4.1
 constantly==15.1.0
     # via twisted
 cryptography==38.0.4
+
+
     # via
     #   autobahn
     #   pyopenssl
@@ -58,6 +60,7 @@ scipy
 pyserial
 psycopg2
 pandas
+Celery
 
 hiredis==2.1.0
     # via aioredis
