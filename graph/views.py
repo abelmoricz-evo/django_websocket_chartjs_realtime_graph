@@ -8,3 +8,4 @@ def update_setpoint(request):
     ph_setpoint = request.GET['ph_setpoint']
     print(f"ph_setpoint: {ph_setpoint}")
     return redirect('/')
+
